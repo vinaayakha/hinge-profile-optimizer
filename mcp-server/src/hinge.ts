@@ -3,6 +3,8 @@ import { getJson, redis, setJson } from "./redis.js";
 
 const SESSION_KEY = "session.json";
 const PENDING_2FA_KEY = "hinge:pending_2fa";
+// hinge-ts defaults to 9.91.0, which Hinge has retired; track the shipping iOS app (override via env).
+const HINGE_APP_VERSION = process.env.HINGE_APP_VERSION ?? "10.7.0";
 
 // hinge-ts persists its session through a file-like storage interface; back it with Redis.
 class RedisStorage implements HingeStorage {
@@ -25,6 +27,7 @@ async function buildClient(phoneNumber?: string): Promise<HingeClient> {
   // The builder insists on a phone number; loadSession then restores the saved one and device ids.
   const client = HingeClient.builder()
     .phoneNumber(phoneNumber ?? "+10000000000")
+    .settings({ hingeAppVersion: HINGE_APP_VERSION })
     .storage(new RedisStorage())
     .transport(new BrowserFetchTransport())
     .build();
