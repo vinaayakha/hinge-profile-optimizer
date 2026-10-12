@@ -1,12 +1,13 @@
 {
   "name": "hinge-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Personal remote MCP server for Hinge Profile Optimizer with OAuth and Hinge login",
   "scripts": {
     "gen": "node scripts/gen-content.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit false --outDir .test-build && node --test test/*.test.mjs"
   },
   "engines": {
     "node": "22.x"

@@ -15,7 +15,7 @@ async function run(fn: () => Promise<unknown>): Promise<ToolResult> {
     return text(await fn());
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const hint = /status 401|status 403/.test(message) ? " Hinge session may have expired; log in again with hinge_login_start." : "";
+    const hint = /status 401/.test(message) ? " Check hinge_status before starting a new login." : "";
     return { ...text(`Error: ${message}${hint}`), isError: true };
   }
 }
@@ -28,11 +28,12 @@ const WRITE_NOTE =
 
 export function createServer(): McpServer {
   const server = new McpServer(
-    { name: "hinge-profile-optimizer", version: "0.1.0" },
+    { name: "hinge-profile-optimizer", version: "0.1.1" },
     {
       instructions:
         "Hinge Profile Optimizer. Read get_optimizer_guide (section 'skill') before coaching. " +
         "To work on the live profile: hinge_status, then hinge_login_start / hinge_login_verify if needed, then hinge_get_profile. " +
+        "An accepted SMS request does not confirm sending or delivery. Never claim the code was sent. Do not automatically retry SMS. " +
         "Never call a hinge_update_* or hinge_delete_* tool without showing the user the exact change and getting a clear yes.",
     }
   );
@@ -86,7 +87,7 @@ export function createServer(): McpServer {
   // Hinge login
   server.registerTool(
     "hinge_status",
-    { title: "Hinge login status", description: "Check whether the server holds a valid Hinge session.", annotations: READ },
+    { title: "Hinge login status", description: "Check stored Hinge token expiry and the last SMS request diagnostics. Does not send an SMS or check token revocation.", annotations: READ },
     () => run(() => hinge.status())
   );
 
@@ -94,11 +95,14 @@ export function createServer(): McpServer {
     "hinge_login_start",
     {
       title: "Start Hinge login",
-      description: "Send a Hinge SMS login code to the phone number. Then call hinge_login_verify with the code.",
-      inputSchema: { phone_number: z.string().regex(/^\+\d{8,15}$/, "E.164 format, e.g. +919812345678") },
+      description: "Prepare Hinge login. With send_sms=true, request an SMS; HTTP success does not confirm delivery. If no code arrives, use send_sms=false and ask the user to request a code in the official Hinge app, then submit it with hinge_login_verify. This is a reported workaround, not guaranteed. Never automatically resend.",
+      inputSchema: {
+        phone_number: z.string().regex(/^\+[1-9]\d{7,14}$/, "E.164 format, e.g. +919812345678"),
+        send_sms: z.boolean().default(true).describe("False prepares login without an SMS request, to try a code requested in the official Hinge app."),
+      },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    ({ phone_number }) => run(() => hinge.loginStart(phone_number))
+    ({ phone_number, send_sms }) => run(() => hinge.loginStart(phone_number, send_sms))
   );
 
   server.registerTool(
@@ -106,7 +110,7 @@ export function createServer(): McpServer {
     {
       title: "Verify Hinge SMS code",
       description: "Submit the SMS code from hinge_login_start. May ask for an email code next (hinge_login_email).",
-      inputSchema: { code: z.string().min(4).max(10) },
+      inputSchema: { code: z.string().regex(/^\d{4,10}$/, "Code must contain 4 to 10 digits") },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     ({ code }) => run(() => hinge.loginVerify(code))
@@ -117,7 +121,7 @@ export function createServer(): McpServer {
     {
       title: "Verify Hinge email code",
       description: "Submit the email verification code when hinge_login_verify asks for one.",
-      inputSchema: { code: z.string().min(4).max(10) },
+      inputSchema: { code: z.string().regex(/^\d{4,10}$/, "Code must contain 4 to 10 digits") },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     ({ code }) => run(() => hinge.loginEmail(code))

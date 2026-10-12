@@ -120,11 +120,15 @@ Download the repository and add `SKILL.md` plus the seven files under `reference
 
 The standalone skill is also listed on [SkillsMP](https://skillsmp.com/skills/b1rdmania-hinge-profile-optimizer-skill-md).
 
+### Personal live-profile MCP server
+
+The optional [`mcp-server/`](mcp-server/README.md) connects a personal Hinge account to ChatGPT and Claude chat through a remote OAuth-protected server. See its setup guide for the connector URL, shared login, deployment, and missing-OTP diagnostics. It is deployed separately from the instruction-only plugin below.
+
 ## Plugin distribution
 
 - **Claude Code:** `.claude-plugin/plugin.json` exposes the packaged skill while the existing marketplace entry remains available.
 - **Codex and ChatGPT:** `.codex-plugin/plugin.json` exposes the same skill through a skills-only plugin.
-- **No account or service required:** the plugin contains instructions and research references only. It has no MCP server, authentication, telemetry, or external data store.
+- **No account or service required for the instruction-only plugin:** the plugin bundle contains instructions and research references only. The optional remote MCP server is a separate deployment with authentication and Redis session storage.
 - **Sensitive uploads:** users are encouraged to crop or blur identifying details and unrelated third-party faces before sharing profile screenshots or photos.
 
 Build and check the submission archive with:

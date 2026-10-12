@@ -4,3 +4,7 @@
 .env
 dist/
 mcp-server/node_modules
+mcp-server/.test-build/
+mcp-server/.env*
+!mcp-server/.env.example
+mcp-server/.vercel/
